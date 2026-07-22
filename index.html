@@ -133,6 +133,10 @@
   footer{margin-top:14px}
   .hintline{text-align:center; font-size:.74rem; color:var(--faint); margin-bottom:12px}
   .hintline .kbd{color:var(--muted)}
+  .reportrow{display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:12px}
+  .reportbtn{background:color-mix(in srgb, var(--accent) 16%, var(--surface)); color:var(--accent); border:1px solid color-mix(in srgb, var(--accent) 40%, transparent); font-size:.86rem; font-weight:600; padding:11px 18px}
+  .reportbtn:hover{background:color-mix(in srgb, var(--accent) 26%, var(--surface))}
+  .reportmsg{font-size:.74rem; color:var(--good); min-height:1em; text-align:center}
   details{border:1px solid var(--border); border-radius:12px; background:var(--surface); overflow:hidden}
   summary{list-style:none; cursor:pointer; padding:12px 15px; font-size:.74rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); display:flex; justify-content:space-between; align-items:center}
   summary::-webkit-details-marker{display:none}
@@ -208,6 +212,10 @@
   <footer>
     <div class="hintline">
       <span class="kbd">Space</span> reveal &nbsp;·&nbsp; <span class="kbd">1</span> / <span class="kbd">←</span> missed &nbsp;·&nbsp; <span class="kbd">2</span> / <span class="kbd">→</span> got it &nbsp;·&nbsp; fast + correct = <span style="color:var(--reflex)">Reflex ⚡</span>
+    </div>
+    <div class="reportrow">
+      <button class="reportbtn" id="reportbtn">📤 Report progress to Sagan</button>
+      <span class="reportmsg" id="reportmsg"></span>
     </div>
     <details>
       <summary>Decks &amp; data</summary>
@@ -459,6 +467,24 @@
     var json = JSON.stringify(deck.cards.map(function(c){return {sym:c.sym,name:c.name,example:c.example,say:c.say,mean:c.mean,known:c.known};}), null, 2);
     if(navigator.clipboard) navigator.clipboard.writeText(json).then(function(){msg("Deck JSON copied.",true);}, function(){$("deckinput").value=json; msg("Copied into the box.",true);});
     else { $("deckinput").value = json; msg("Deck JSON put in the box.", true); }
+  });
+
+  // ---------- report back ----------
+  function buildReport(){
+    var s = stats();
+    var cards = deck.cards.map(function(c){ var p=prog[c._k]; return {s:c.sym, b:p.box, n:p.seen, c:p.correct, t:p.best}; });
+    return {app:"glyph", v:1, deck:deck.id, at:new Date().toISOString(), reflex:s.reflex, learned:s.learned, total:s.total, dist:s.dist, cards:cards};
+  }
+  function reportMsg(t){ var m=$("reportmsg"); m.textContent=t; setTimeout(function(){ if(m.textContent===t) m.textContent=""; }, 6000); }
+  function showReport(txt){ $("deckinput").value = txt; var d=document.querySelector("details"); if(d) d.open=true; reportMsg("Report's in the box below — copy it to Sagan."); }
+  function copyReport(txt){
+    if(navigator.clipboard){ navigator.clipboard.writeText(txt).then(function(){ reportMsg("Copied — paste it to Sagan on Telegram."); }, function(){ showReport(txt); }); }
+    else showReport(txt);
+  }
+  $("reportbtn").addEventListener("click", function(){
+    var txt = "GLYPH REPORT\n" + JSON.stringify(buildReport());
+    if(navigator.share){ navigator.share({title:"Glyph progress", text:txt}).then(function(){ reportMsg("Shared — pick Sagan's chat."); }, function(){ copyReport(txt); }); }
+    else copyReport(txt);
   });
 
   // ---------- go ----------
