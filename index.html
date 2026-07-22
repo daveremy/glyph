@@ -109,7 +109,7 @@
   .answer.show{display:flex; animation:rise .34s ease both}
   @keyframes rise{from{opacity:0; transform:translateY(9px)} to{opacity:1; transform:none}}
   .arow{display:flex; gap:12px; align-items:baseline}
-  .arow .glyph.mid{min-width:1.4em; text-align:center}
+  .arow .glyph.mid{min-width:1.4em; text-align:center; cursor:pointer}
   .arow .say{font-family:ui-serif,Georgia,serif; font-size:1.3rem; font-weight:600}
   .arow .name{font-size:.82rem; color:var(--accent-dim); font-style:italic; margin:2px 0 4px}
   .arow .mean{font-size:1rem; color:var(--text)}
@@ -256,25 +256,25 @@
   var SET_DECK = {
     id:"set-notation", name:"Set Notation",
     cards:[
-      {sym:"∈", name:"element-of sign — from Greek ε (epsilon), for “ἐστί”, is", example:"3 ∈ {1, 2, 3}", say:"is in", mean:"x is an element of the set", known:"SQL: x IN (…) · contains(x)"},
-      {sym:"∉", name:"not-an-element sign (∈ with a slash)", example:"5 ∉ {1, 2, 3}", say:"is not in", mean:"x is not an element", known:"NOT IN"},
-      {sym:"⊆", name:"subset-or-equal sign", example:"{1, 2} ⊆ {1, 2, 3}", say:"is a subset of", mean:"every member of A is also in B", known:"all of A's rows sit inside B"},
-      {sym:"⊂", name:"(proper) subset sign", example:"{1, 2} ⊂ {1, 2, 3}", say:"proper subset of", mean:"a subset, and B has something extra", known:"strictly smaller than B"},
-      {sym:"∅", name:"empty-set sign — the Nordic Ø, introduced by André Weil (Bourbaki)", example:"∅ = { },  |∅| = 0", say:"the empty set", mean:"the set with nothing in it (also { })", known:"the empty result · [ ]"},
-      {sym:"∪", name:"union — read “cup”", example:"{1, 2} ∪ {2, 3} = {1, 2, 3}", say:"union", mean:"everything in A or B (or both)", known:"UNION"},
-      {sym:"∩", name:"intersection — read “cap”", example:"{1, 2} ∩ {2, 3} = {2}", say:"intersect", mean:"only what's in both", known:"INTERSECT · inner join"},
-      {sym:"\\", name:"set-minus (a backslash)", example:"{1, 2, 3} \\ {2} = {1, 3}", say:"minus / difference", mean:"in A but not in B", known:"EXCEPT"},
-      {sym:"{ x ∈ S : P(x) }", name:"set-builder notation", example:"{ n ∈ ℕ : n even } = {0, 2, 4, …}", say:"set-builder", mean:"the x's in S where P holds", known:"SELECT x FROM S WHERE P"},
-      {sym:":", name:"colon — reads “such that” (also written | )", example:"{ x ∈ ℝ : x > 0 }  (x such that x > 0)", say:"such that", mean:"the filter keyword inside a set", known:"WHERE"},
-      {sym:"ℕ", name:"blackboard-bold N — Natural numbers", example:"0, 1, 2, 3, … ∈ ℕ", say:"the naturals", mean:"0, 1, 2, 3, …", known:"counting numbers"},
-      {sym:"ℤ", name:"blackboard-bold Z — from German “Zahlen” (numbers)", example:"−2 ∈ ℤ,  but −2 ∉ ℕ", say:"the integers", mean:"…, −2, −1, 0, 1, 2, …", known:"whole numbers, + and −"},
-      {sym:"ℚ", name:"blackboard-bold Q — from “Quotient”", example:"1/2 ∈ ℚ", say:"the rationals", mean:"fractions a / b", known:"ratios"},
-      {sym:"ℝ", name:"blackboard-bold R — Real numbers", example:"π ∈ ℝ,  but π ∉ ℚ", say:"the reals", mean:"the whole continuous number line", known:"any decimal you can name"},
-      {sym:"|A|", name:"cardinality bars (like absolute-value bars)", example:"|{a, b, c}| = 3", say:"cardinality of A", mean:"how many elements A has", known:"COUNT(*)"},
-      {sym:"∀", name:"universal quantifier — a turned “A”, for All", example:"∀n ∈ ℕ,  n + 0 = n", say:"for all / for every", mean:"every single one, no exceptions", known:"true for all rows"},
-      {sym:"∃", name:"existential quantifier — a turned “E”, for Exists", example:"∃n ∈ ℕ,  n > 5", say:"there exists", mean:"at least one exists", known:"EXISTS (…)"},
-      {sym:"⇒", name:"implies — rightwards double arrow", example:"x > 2  ⇒  x > 1", say:"implies / if…then", mean:"if the left is true, the right is too", known:"if A then B"},
-      {sym:"⇔", name:"if-and-only-if — the biconditional (double arrow)", example:"n even  ⇔  n = 2k for some k", say:"if and only if", mean:"true in both directions — the same thing", known:"exactly when"}
+      {sym:"∈", name:"element-of sign — from Greek ε (epsilon), for “ἐστί”, is", spoken:"epsilon", example:"3 ∈ {1, 2, 3}", say:"is in", mean:"x is an element of the set", known:"SQL: x IN (…) · contains(x)"},
+      {sym:"∉", name:"not-an-element sign (∈ with a slash)", spoken:"epsilon with a slash", example:"5 ∉ {1, 2, 3}", say:"is not in", mean:"x is not an element", known:"NOT IN"},
+      {sym:"⊆", name:"subset-or-equal sign", spoken:"subset-or-equal sign", example:"{1, 2} ⊆ {1, 2, 3}", say:"is a subset of", mean:"every member of A is also in B", known:"all of A's rows sit inside B"},
+      {sym:"⊂", name:"(proper) subset sign", spoken:"proper subset sign", example:"{1, 2} ⊂ {1, 2, 3}", say:"proper subset of", mean:"a subset, and B has something extra", known:"strictly smaller than B"},
+      {sym:"∅", name:"empty-set sign — the Nordic Ø, introduced by André Weil (Bourbaki)", spoken:"empty-set sign", example:"∅ = { },  |∅| = 0", say:"the empty set", mean:"the set with nothing in it (also { })", known:"the empty result · [ ]"},
+      {sym:"∪", name:"union — read “cup”", spoken:"cup", example:"{1, 2} ∪ {2, 3} = {1, 2, 3}", say:"union", mean:"everything in A or B (or both)", known:"UNION"},
+      {sym:"∩", name:"intersection — read “cap”", spoken:"cap", example:"{1, 2} ∩ {2, 3} = {2}", say:"intersect", mean:"only what's in both", known:"INTERSECT · inner join"},
+      {sym:"\\", name:"set-minus (a backslash)", spoken:"backslash", example:"{1, 2, 3} \\ {2} = {1, 3}", say:"minus / difference", mean:"in A but not in B", known:"EXCEPT"},
+      {sym:"{ x ∈ S : P(x) }", name:"set-builder notation", spoken:"set-builder notation", example:"{ n ∈ ℕ : n even } = {0, 2, 4, …}", say:"set-builder", mean:"the x's in S where P holds", known:"SELECT x FROM S WHERE P"},
+      {sym:":", name:"colon — reads “such that” (also written | )", spoken:"colon", example:"{ x ∈ ℝ : x > 0 }  (x such that x > 0)", say:"such that", mean:"the filter keyword inside a set", known:"WHERE"},
+      {sym:"ℕ", name:"blackboard-bold N — Natural numbers", spoken:"blackboard bold N", example:"0, 1, 2, 3, … ∈ ℕ", say:"the naturals", mean:"0, 1, 2, 3, …", known:"counting numbers"},
+      {sym:"ℤ", name:"blackboard-bold Z — from German “Zahlen” (numbers)", spoken:"blackboard bold Z", example:"−2 ∈ ℤ,  but −2 ∉ ℕ", say:"the integers", mean:"…, −2, −1, 0, 1, 2, …", known:"whole numbers, + and −"},
+      {sym:"ℚ", name:"blackboard-bold Q — from “Quotient”", spoken:"blackboard bold Q", example:"1/2 ∈ ℚ", say:"the rationals", mean:"fractions a / b", known:"ratios"},
+      {sym:"ℝ", name:"blackboard-bold R — Real numbers", spoken:"blackboard bold R", example:"π ∈ ℝ,  but π ∉ ℚ", say:"the reals", mean:"the whole continuous number line", known:"any decimal you can name"},
+      {sym:"|A|", name:"cardinality bars (like absolute-value bars)", spoken:"cardinality bars", example:"|{a, b, c}| = 3", say:"cardinality of A", mean:"how many elements A has", known:"COUNT(*)"},
+      {sym:"∀", name:"universal quantifier — a turned “A”, for All", spoken:"turned A", example:"∀n ∈ ℕ,  n + 0 = n", say:"for all / for every", mean:"every single one, no exceptions", known:"true for all rows"},
+      {sym:"∃", name:"existential quantifier — a turned “E”, for Exists", spoken:"turned E", example:"∃n ∈ ℕ,  n > 5", say:"there exists", mean:"at least one exists", known:"EXISTS (…)"},
+      {sym:"⇒", name:"implies — rightwards double arrow", spoken:"double arrow", example:"x > 2  ⇒  x > 1", say:"implies / if…then", mean:"if the left is true, the right is too", known:"if A then B"},
+      {sym:"⇔", name:"if-and-only-if — the biconditional (double arrow)", spoken:"double arrow, both directions", example:"n even  ⇔  n = 2k for some k", say:"if and only if", mean:"true in both directions — the same thing", known:"exactly when"}
     ]
   };
 
@@ -365,6 +365,8 @@
     }
     $("actions").innerHTML = '<button class="btn-reveal" id="reveal">Reveal <span class="kbd">Space</span></button>';
     $("reveal").addEventListener("click", doReveal);
+    // prompt audio: symbol shown → speak its name; english shown → speak the meaning
+    if(dir === "s2m") speakName(); else speakMeaning();
     startTimer();
     renderStats();
   }
@@ -378,7 +380,8 @@
     $("a-mean").textContent = cur.mean;
     $("a-known").textContent = cur.known;
     var ex = $("a-example"); ex.textContent = cur.example || ""; ex.style.display = cur.example ? "block" : "none";
-    speak(cur.say);
+    // reveal audio: speak the ANSWER side — s2m answer is the meaning, m2s answer is the symbol name
+    if(dir === "s2m") speakMeaning(); else speakName();
     $("answer").classList.add("show");
     var fast = curElapsed <= REFLEX_MS;
     var gotSub = fast ? "fast ⚡ · Enter" : "Enter";
@@ -468,14 +471,14 @@
     try{
       var arr = JSON.parse(raw);
       if(!Array.isArray(arr) || !arr.length) throw 0;
-      arr.forEach(function(c){ if(typeof c.sym==="undefined"||typeof c.say==="undefined") throw 0; c.name=c.name||""; c.example=c.example||""; c.mean=c.mean||""; c.known=c.known||""; });
+      arr.forEach(function(c){ if(typeof c.sym==="undefined"||typeof c.say==="undefined") throw 0; c.name=c.name||""; c.spoken=c.spoken||""; c.example=c.example||""; c.mean=c.mean||""; c.known=c.known||""; });
       deck = {id:"custom-"+arr.length, name:"Custom deck", cards:arr};
       $("deckname").textContent = deck.name;
       streak=0; load(); next(); msg("Loaded "+arr.length+" cards.", true);
     }catch(err){ msg("Invalid deck JSON. Need an array of {sym, say, mean, known}.", false); }
   });
   $("copydeck").addEventListener("click", function(){
-    var json = JSON.stringify(deck.cards.map(function(c){return {sym:c.sym,name:c.name,example:c.example,say:c.say,mean:c.mean,known:c.known};}), null, 2);
+    var json = JSON.stringify(deck.cards.map(function(c){return {sym:c.sym,name:c.name,spoken:c.spoken,example:c.example,say:c.say,mean:c.mean,known:c.known};}), null, 2);
     if(navigator.clipboard) navigator.clipboard.writeText(json).then(function(){msg("Deck JSON copied.",true);}, function(){$("deckinput").value=json; msg("Copied into the box.",true);});
     else { $("deckinput").value = json; msg("Deck JSON put in the box.", true); }
   });
@@ -519,7 +522,7 @@
     else { $("deckinput").value=url; msg("Save link is in the box above — copy it.", true); }
   });
 
-  // ---------- audio (v1: browser speech) ----------
+  // ---------- audio: symbol on screen → NAME; english on screen → MEANING ----------
   var audioOn = true;
   try{ audioOn = localStorage.getItem("glyph-audio") !== "off"; }catch(e){}
   function paintAudio(){ var b=$("audiotoggle"); if(b){ b.textContent = audioOn?"🔊":"🔇"; b.classList.toggle("off", !audioOn); } }
@@ -527,11 +530,14 @@
     if((!audioOn && !force) || !text || !window.speechSynthesis) return;
     try{ speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(text); u.rate=0.95; u.pitch=1; speechSynthesis.speak(u); }catch(e){}
   }
+  function speakName(force){ if(cur) speak(cur.spoken || cur.name || cur.say, force); }  // how the symbol is NAMED aloud
+  function speakMeaning(force){ if(cur) speak(cur.say, force); }                          // how a mathematician READS it
   $("audiotoggle").addEventListener("click", function(){
     audioOn=!audioOn; try{ localStorage.setItem("glyph-audio", audioOn?"on":"off"); }catch(e){}
-    paintAudio(); if(audioOn && cur) speak(cur.say);
+    paintAudio();
   });
-  $("replay").addEventListener("click", function(){ if(cur) speak(cur.say, true); });
+  $("replay").addEventListener("click", function(){ speakMeaning(true); });  // 🔊 by the english = the meaning
+  $("a-sym").addEventListener("click", function(){ speakName(true); });       // click the glyph = its spoken name
 
   // ---------- go ----------
   paintAudio();
