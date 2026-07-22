@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Glyph — Set Notation Trainer</title>
+<style>
+  /* ============ GLYPH — symbol trainer ============ */
+  :root{
+    --bg:#0e1020; --surface:#171a2e; --surface-2:#1f2340; --border:#2c3154;
+    --text:#e9eaf4; --muted:#9aa0c6; --faint:#6a6f97;
+    --accent:#e6b15e; --accent-dim:#b9843d; --accent-ink:#241a08;
+    --good:#5ec98d; --bad:#e57b6f; --reflex:#7ec8e3;
+    --shadow:0 18px 50px -20px rgba(0,0,0,.7);
+    --r:16px;
+  }
+  @media (prefers-color-scheme:light){
+    :root{
+      --bg:#eaeef6; --surface:#ffffff; --surface-2:#f2f5fb; --border:#d6dce9;
+      --text:#1b1f33; --muted:#59608a; --faint:#8b91b3;
+      --accent:#bd7a20; --accent-dim:#9c6318; --accent-ink:#fff6e6;
+      --good:#2f9e64; --bad:#ce5044; --reflex:#2b7c9c;
+      --shadow:0 16px 40px -22px rgba(30,40,80,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e1020; --surface:#171a2e; --surface-2:#1f2340; --border:#2c3154;
+    --text:#e9eaf4; --muted:#9aa0c6; --faint:#6a6f97;
+    --accent:#e6b15e; --accent-dim:#b9843d; --accent-ink:#241a08;
+    --good:#5ec98d; --bad:#e57b6f; --reflex:#7ec8e3;
+    --shadow:0 18px 50px -20px rgba(0,0,0,.7);
+  }
+  :root[data-theme="light"]{
+    --bg:#eaeef6; --surface:#ffffff; --surface-2:#f2f5fb; --border:#d6dce9;
+    --text:#1b1f33; --muted:#59608a; --faint:#8b91b3;
+    --accent:#bd7a20; --accent-dim:#9c6318; --accent-ink:#fff6e6;
+    --good:#2f9e64; --bad:#ce5044; --reflex:#2b7c9c;
+    --shadow:0 16px 40px -22px rgba(30,40,80,.45);
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:
+      radial-gradient(1100px 620px at 78% -8%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex; justify-content:center;
+  }
+  .app{
+    width:100%; max-width:680px; min-height:100dvh;
+    display:flex; flex-direction:column; padding:18px 18px 22px;
+  }
+  .serif{font-family:ui-serif,Georgia,"Iowan Old Style","Palatino Linotype",Palatino,serif}
+  .mono{font-family:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace;font-variant-numeric:tabular-nums}
+
+  /* ---------- header / instrument bar ---------- */
+  header{display:flex; align-items:flex-start; justify-content:space-between; gap:14px}
+  .brand{display:flex; flex-direction:column; gap:2px}
+  .logo{font-family:ui-serif,Georgia,serif; font-size:1.5rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase}
+  .logo b{color:var(--accent); font-weight:600}
+  .deckname{font-size:.72rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted)}
+  .readout{display:flex; gap:16px; text-align:right}
+  .stat{display:flex; flex-direction:column; gap:1px; line-height:1}
+  .stat .n{font-family:ui-monospace,Menlo,monospace; font-variant-numeric:tabular-nums; font-size:1.35rem; font-weight:600}
+  .stat .k{font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); margin-top:5px}
+  .stat.reflex .n{color:var(--reflex)}
+  .stat.streak .n{color:var(--accent)}
+
+  /* ---------- box pips ---------- */
+  .boxes{display:flex; gap:6px; margin-top:14px}
+  .pip{flex:1; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:7px 4px 6px; text-align:center; position:relative; overflow:hidden}
+  .pip .fill{position:absolute; inset:auto 0 0 0; background:color-mix(in srgb, var(--accent) 26%, transparent); height:0; transition:height .4s ease}
+  .pip.b5 .fill{background:color-mix(in srgb, var(--reflex) 30%, transparent)}
+  .pip .c{position:relative; font-family:ui-monospace,Menlo,monospace; font-variant-numeric:tabular-nums; font-size:.95rem; font-weight:600}
+  .pip .l{position:relative; display:block; font-size:.54rem; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); margin-top:3px}
+  .pip.b5 .l{color:var(--reflex)}
+
+  /* ---------- card stage ---------- */
+  main{flex:1; display:flex; flex-direction:column; justify-content:center; padding:22px 0}
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
+    box-shadow:var(--shadow); padding:30px 26px; position:relative;
+    display:flex; flex-direction:column; gap:20px; min-height:340px;
+  }
+  .ask{display:flex; align-items:center; justify-content:space-between; gap:10px}
+  .ask .tag{font-size:.66rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); border:1px solid var(--border); border-radius:999px; padding:5px 11px}
+  .ask .timer{font-family:ui-monospace,Menlo,monospace; font-variant-numeric:tabular-nums; font-size:.82rem; color:var(--faint)}
+  .ask .timer.fast{color:var(--reflex)}
+
+  .prompt{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:10px; padding:8px 0}
+  .glyph{font-family:ui-serif,Georgia,serif; line-height:1; color:var(--text)}
+  .glyph.big{font-size:clamp(3.6rem,17vw,6rem)}
+  .glyph.mid{font-size:clamp(2rem,9vw,3.1rem)}
+  .prompt .word{font-family:ui-serif,Georgia,serif; font-size:clamp(1.7rem,7vw,2.4rem); font-weight:600; text-wrap:balance}
+  .prompt .hint{font-size:.9rem; color:var(--muted); max-width:42ch; text-wrap:balance}
+  .prompt .cue{font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint)}
+
+  /* ---------- answer reveal ---------- */
+  .answer{display:none; flex-direction:column; gap:12px; border-top:1px dashed var(--border); padding-top:18px}
+  .answer.show{display:flex; animation:rise .34s ease both}
+  @keyframes rise{from{opacity:0; transform:translateY(9px)} to{opacity:1; transform:none}}
+  .arow{display:flex; gap:12px; align-items:baseline}
+  .arow .glyph.mid{min-width:1.4em; text-align:center}
+  .arow .say{font-family:ui-serif,Georgia,serif; font-size:1.3rem; font-weight:600}
+  .arow .name{font-size:.82rem; color:var(--accent-dim); font-style:italic; margin:2px 0 4px}
+  .arow .mean{font-size:1rem; color:var(--text)}
+  .known{font-family:ui-monospace,Menlo,monospace; font-size:.85rem; color:var(--good); background:color-mix(in srgb, var(--good) 12%, transparent); border:1px solid color-mix(in srgb, var(--good) 30%, transparent); border-radius:8px; padding:7px 10px; align-self:flex-start}
+  .example{font-family:ui-serif,Georgia,serif; font-size:1rem; color:var(--text); background:var(--surface-2); border:1px dashed var(--border); border-radius:8px; padding:8px 11px; align-self:stretch}
+  .example::before{content:"e.g.  "; font-family:system-ui,sans-serif; font-size:.6rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint)}
+
+  /* ---------- buttons ---------- */
+  .actions{display:flex; gap:12px}
+  button{font-family:inherit; cursor:pointer; border-radius:12px; border:1px solid var(--border); transition:transform .08s ease, background .15s, border-color .15s, color .15s}
+  button:active{transform:translateY(1px)}
+  button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .btn-reveal{flex:1; background:var(--accent); color:var(--accent-ink); border-color:transparent; font-size:1.05rem; font-weight:650; padding:16px; letter-spacing:.02em}
+  .btn-reveal:hover{filter:brightness(1.06)}
+  .grade{flex:1; padding:15px; font-size:1rem; font-weight:600; background:var(--surface-2); color:var(--text)}
+  .btn-miss:hover{border-color:var(--bad); color:var(--bad); background:color-mix(in srgb, var(--bad) 12%, var(--surface-2))}
+  .btn-got:hover{border-color:var(--good); color:var(--good); background:color-mix(in srgb, var(--good) 12%, var(--surface-2))}
+  .btn-got .sub,.btn-miss .sub{display:block; font-size:.64rem; font-weight:500; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin-top:4px}
+  .kbd{font-family:ui-monospace,Menlo,monospace; font-size:.62rem; color:var(--faint)}
+
+  .flash{position:absolute; inset:0; border-radius:var(--r); pointer-events:none; opacity:0}
+  .flash.go{animation:flash .5s ease}
+  @keyframes flash{0%{opacity:.5}100%{opacity:0}}
+
+  /* ---------- footer / tools ---------- */
+  footer{margin-top:14px}
+  .hintline{text-align:center; font-size:.74rem; color:var(--faint); margin-bottom:12px}
+  .hintline .kbd{color:var(--muted)}
+  details{border:1px solid var(--border); border-radius:12px; background:var(--surface); overflow:hidden}
+  summary{list-style:none; cursor:pointer; padding:12px 15px; font-size:.74rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); display:flex; justify-content:space-between; align-items:center}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+"; color:var(--faint); font-size:1rem}
+  details[open] summary::after{content:"–"}
+  .panel{padding:0 15px 15px; display:flex; flex-direction:column; gap:12px}
+  .panel p{margin:0; font-size:.82rem; color:var(--muted); line-height:1.5}
+  .toolrow{display:flex; flex-wrap:wrap; gap:8px}
+  .tool{background:var(--surface-2); color:var(--text); font-size:.8rem; padding:9px 13px}
+  .tool:hover{border-color:var(--accent); color:var(--accent)}
+  .tool.danger:hover{border-color:var(--bad); color:var(--bad)}
+  textarea{width:100%; min-height:96px; resize:vertical; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:10px; padding:10px; font-family:ui-monospace,Menlo,monospace; font-size:.76rem}
+  .msg{font-size:.78rem; min-height:1.1em}
+  .msg.ok{color:var(--good)} .msg.err{color:var(--bad)}
+
+  @media (max-width:480px){
+    .readout{gap:12px}
+    .stat .n{font-size:1.15rem}
+    .card{padding:24px 18px; min-height:320px}
+    .pip .l{font-size:.5rem}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.001ms !important; transition-duration:.001ms !important}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo serif"><b>Glyph</b></div>
+      <div class="deckname" id="deckname">Set Notation</div>
+    </div>
+    <div class="readout">
+      <div class="stat reflex"><span class="n mono" id="s-reflex">0</span><span class="k">Reflex</span></div>
+      <div class="stat"><span class="n mono" id="s-learned">0</span><span class="k">Learned</span></div>
+      <div class="stat streak"><span class="n mono" id="s-streak">0</span><span class="k">Streak</span></div>
+    </div>
+  </header>
+
+  <div class="boxes" id="boxes" aria-label="Leitner box distribution"></div>
+
+  <main>
+    <div class="card">
+      <div class="flash" id="flash"></div>
+      <div class="ask">
+        <span class="tag" id="tag">Symbol → meaning</span>
+        <span class="timer mono" id="timer">0.0s</span>
+      </div>
+
+      <div class="prompt" id="prompt"><!-- filled by JS --></div>
+
+      <div class="answer" id="answer">
+        <div class="arow">
+          <span class="glyph mid" id="a-sym"></span>
+          <div>
+            <div class="say serif" id="a-say"></div>
+            <div class="name" id="a-name"></div>
+            <div class="mean" id="a-mean"></div>
+          </div>
+        </div>
+        <div class="known mono" id="a-known"></div>
+        <div class="example mono" id="a-example"></div>
+      </div>
+
+      <div class="actions" id="actions">
+        <button class="btn-reveal" id="reveal">Reveal <span class="kbd">Space</span></button>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="hintline">
+      <span class="kbd">Space</span> reveal &nbsp;·&nbsp; <span class="kbd">1</span> / <span class="kbd">←</span> missed &nbsp;·&nbsp; <span class="kbd">2</span> / <span class="kbd">→</span> got it &nbsp;·&nbsp; fast + correct = <span style="color:var(--reflex)">Reflex ⚡</span>
+    </div>
+    <details>
+      <summary>Decks &amp; data</summary>
+      <div class="panel">
+        <p>Progress lives on this device. <b>Export</b> saves a JSON snapshot (scores, boxes, best times) you can commit to the repo. <b>Load a deck</b> to reuse Glyph for any subject — paste JSON of <span class="mono">[{"sym","name","say","mean","known"}]</span> (name optional).</p>
+        <div class="toolrow">
+          <button class="tool" id="export">⭳ Export progress</button>
+          <button class="tool" id="import">⭱ Import progress</button>
+          <button class="tool danger" id="reset">↺ Reset this deck</button>
+        </div>
+        <textarea id="deckinput" placeholder='Paste a deck: [{"sym":"→","name":"rightwards arrow","say":"maps to","mean":"...","known":"..."}]'></textarea>
+        <div class="toolrow">
+          <button class="tool" id="loaddeck">Load deck from box above</button>
+          <button class="tool" id="copydeck">Copy current deck JSON</button>
+        </div>
+        <div class="msg" id="msg"></div>
+      </div>
+    </details>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var REFLEX_MS = 3500;               // "automatic" threshold — Dave's latency-as-fluency idea
+  var VERSION = "glyph-v1";
+
+  var SET_DECK = {
+    id:"set-notation", name:"Set Notation",
+    cards:[
+      {sym:"∈", name:"element-of sign — from Greek ε (epsilon), for “ἐστί”, is", example:"3 ∈ {1, 2, 3}", say:"is in", mean:"x is an element of the set", known:"SQL: x IN (…) · contains(x)"},
+      {sym:"∉", name:"not-an-element sign (∈ with a slash)", example:"5 ∉ {1, 2, 3}", say:"is not in", mean:"x is not an element", known:"NOT IN"},
+      {sym:"⊆", name:"subset-or-equal sign", example:"{1, 2} ⊆ {1, 2, 3}", say:"is a subset of", mean:"every member of A is also in B", known:"all of A's rows sit inside B"},
+      {sym:"⊂", name:"(proper) subset sign", example:"{1, 2} ⊂ {1, 2, 3}", say:"proper subset of", mean:"a subset, and B has something extra", known:"strictly smaller than B"},
+      {sym:"∅", name:"empty-set sign — the Nordic Ø, introduced by André Weil (Bourbaki)", example:"∅ = { },  |∅| = 0", say:"the empty set", mean:"the set with nothing in it (also { })", known:"the empty result · [ ]"},
+      {sym:"∪", name:"union — read “cup”", example:"{1, 2} ∪ {2, 3} = {1, 2, 3}", say:"union", mean:"everything in A or B (or both)", known:"UNION"},
+      {sym:"∩", name:"intersection — read “cap”", example:"{1, 2} ∩ {2, 3} = {2}", say:"intersect", mean:"only what's in both", known:"INTERSECT · inner join"},
+      {sym:"\\", name:"set-minus (a backslash)", example:"{1, 2, 3} \\ {2} = {1, 3}", say:"minus / difference", mean:"in A but not in B", known:"EXCEPT"},
+      {sym:"{ x ∈ S : P(x) }", name:"set-builder notation", example:"{ n ∈ ℕ : n even } = {0, 2, 4, …}", say:"set-builder", mean:"the x's in S where P holds", known:"SELECT x FROM S WHERE P"},
+      {sym:":", name:"colon — reads “such that” (also written | )", example:"{ x ∈ ℝ : x > 0 }  (x such that x > 0)", say:"such that", mean:"the filter keyword inside a set", known:"WHERE"},
+      {sym:"ℕ", name:"blackboard-bold N — Natural numbers", example:"0, 1, 2, 3, … ∈ ℕ", say:"the naturals", mean:"0, 1, 2, 3, …", known:"counting numbers"},
+      {sym:"ℤ", name:"blackboard-bold Z — from German “Zahlen” (numbers)", example:"−2 ∈ ℤ,  but −2 ∉ ℕ", say:"the integers", mean:"…, −2, −1, 0, 1, 2, …", known:"whole numbers, + and −"},
+      {sym:"ℚ", name:"blackboard-bold Q — from “Quotient”", example:"1/2 ∈ ℚ", say:"the rationals", mean:"fractions a / b", known:"ratios"},
+      {sym:"ℝ", name:"blackboard-bold R — Real numbers", example:"π ∈ ℝ,  but π ∉ ℚ", say:"the reals", mean:"the whole continuous number line", known:"any decimal you can name"},
+      {sym:"|A|", name:"cardinality bars (like absolute-value bars)", example:"|{a, b, c}| = 3", say:"cardinality of A", mean:"how many elements A has", known:"COUNT(*)"},
+      {sym:"∀", name:"universal quantifier — a turned “A”, for All", example:"∀n ∈ ℕ,  n + 0 = n", say:"for all / for every", mean:"every single one, no exceptions", known:"true for all rows"},
+      {sym:"∃", name:"existential quantifier — a turned “E”, for Exists", example:"∃n ∈ ℕ,  n > 5", say:"there exists", mean:"at least one exists", known:"EXISTS (…)"},
+      {sym:"⇒", name:"implies — rightwards double arrow", example:"x > 2  ⇒  x > 1", say:"implies / if…then", mean:"if the left is true, the right is too", known:"if A then B"},
+      {sym:"⇔", name:"if-and-only-if — the biconditional (double arrow)", example:"n even  ⇔  n = 2k for some k", say:"if and only if", mean:"true in both directions — the same thing", known:"exactly when"}
+    ]
+  };
+
+  var $ = function(id){ return document.getElementById(id); };
+  var deck = SET_DECK, prog = {}, cur = null, dir = "s2m", revealed = false;
+  var t0 = 0, tick = null, curElapsed = 0;
+
+  function keyFor(d){ return VERSION+":"+d.id; }
+  function load(){
+    prog = {};
+    try{ var raw = localStorage.getItem(keyFor(deck)); if(raw) prog = JSON.parse(raw)||{}; }catch(e){}
+    deck.cards.forEach(function(c,i){
+      var k = c.sym+"|"+i;
+      if(!prog[k]) prog[k] = {box:1, seen:0, correct:0, best:null, last:null};
+      c._k = k;
+    });
+  }
+  function save(){ try{ localStorage.setItem(keyFor(deck), JSON.stringify(prog)); }catch(e){} }
+
+  function stats(){
+    var reflex=0, learned=0, dist=[0,0,0,0,0];
+    deck.cards.forEach(function(c){
+      var p = prog[c._k]; dist[p.box-1]++;
+      if(p.box===5) reflex++;
+      if(p.box>=3) learned++;
+    });
+    return {reflex:reflex, learned:learned, dist:dist, total:deck.cards.length};
+  }
+  function renderStats(){
+    var s = stats();
+    $("s-reflex").textContent = s.reflex;
+    $("s-learned").textContent = s.learned + "/" + s.total;
+    $("s-streak").textContent = streak;
+    var box = $("boxes"); box.innerHTML = "";
+    var labels = ["New","Seen","Firm","Solid","Reflex"];
+    for(var i=0;i<5;i++){
+      var d = document.createElement("div");
+      d.className = "pip" + (i===4?" b5":"");
+      var pct = s.total? Math.round(s.dist[i]/s.total*100):0;
+      d.innerHTML = '<span class="fill" style="height:'+pct+'%"></span>'+
+                    '<span class="c">'+s.dist[i]+'</span><span class="l">'+labels[i]+'</span>';
+      box.appendChild(d);
+    }
+  }
+
+  var streak = 0;
+
+  function weightedPick(){
+    var pool = deck.cards.filter(function(c){ return c!==cur; });
+    if(!pool.length) pool = deck.cards.slice();
+    var weights = pool.map(function(c){ return 6 - prog[c._k].box; }); // lower box → seen more
+    var sum = weights.reduce(function(a,b){return a+b;},0);
+    var pickWeights = weights.map(function(w){ return w/sum; });
+    // deterministic-ish shuffle via time; fine for a solo game
+    var r = Math.random()*1, acc=0;
+    for(var i=0;i<pool.length;i++){ acc += pickWeights[i]; if(r<=acc) return pool[i]; }
+    return pool[pool.length-1];
+  }
+
+  function startTimer(){
+    t0 = performance.now(); curElapsed = 0;
+    var el = $("timer"); el.classList.remove("fast");
+    if(tick) clearInterval(tick);
+    tick = setInterval(function(){
+      curElapsed = performance.now() - t0;
+      el.textContent = (curElapsed/1000).toFixed(1) + "s";
+      if(curElapsed <= REFLEX_MS) el.classList.add("fast"); else el.classList.remove("fast");
+    }, 100);
+  }
+  function stopTimer(){ if(tick){ clearInterval(tick); tick=null; } curElapsed = performance.now()-t0; }
+
+  function next(){
+    cur = weightedPick();
+    dir = Math.random() < 0.5 ? "s2m" : "m2s";
+    revealed = false;
+    $("answer").classList.remove("show");
+    var p = $("prompt");
+    var isBig = cur.sym.length <= 3;
+    if(dir === "s2m"){
+      $("tag").textContent = "Symbol → meaning";
+      p.innerHTML = '<div class="glyph '+(isBig?"big":"mid")+'">'+esc(cur.sym)+'</div>'+
+                    '<div class="cue">say it out loud, then reveal</div>';
+    } else {
+      $("tag").textContent = "Meaning → symbol";
+      p.innerHTML = '<div class="word">'+esc(cur.say)+'</div>'+
+                    '<div class="hint">'+esc(cur.known)+'</div>'+
+                    '<div class="cue">which glyph?</div>';
+    }
+    $("actions").innerHTML = '<button class="btn-reveal" id="reveal">Reveal <span class="kbd">Space</span></button>';
+    $("reveal").addEventListener("click", doReveal);
+    startTimer();
+    renderStats();
+  }
+
+  function doReveal(){
+    if(revealed) return;
+    revealed = true; stopTimer();
+    $("a-sym").textContent = cur.sym;
+    $("a-say").textContent = cur.say;
+    var nm = $("a-name"); nm.textContent = cur.name || ""; nm.style.display = cur.name ? "block" : "none";
+    $("a-mean").textContent = cur.mean;
+    $("a-known").textContent = cur.known;
+    var ex = $("a-example"); ex.textContent = cur.example || ""; ex.style.display = cur.example ? "block" : "none";
+    $("answer").classList.add("show");
+    var fast = curElapsed <= REFLEX_MS;
+    var gotSub = fast ? "fast ⚡ · Enter" : "Enter";
+    $("actions").innerHTML =
+      '<button class="grade btn-miss" id="miss">Missed<span class="sub">1 / ←</span></button>'+
+      '<button class="grade btn-got" id="got">Got it<span class="sub">'+gotSub+'</span></button>';
+    $("miss").addEventListener("click", function(){ grade(false); });
+    $("got").addEventListener("click", function(){ grade(true); });
+  }
+
+  function grade(ok){
+    if(!revealed) return;
+    var p = prog[cur._k];
+    var fast = curElapsed <= REFLEX_MS;
+    p.seen++; p.last = Math.round(curElapsed);
+    if(ok){
+      p.correct++;
+      if(p.best===null || curElapsed < p.best) p.best = Math.round(curElapsed);
+      // fast + correct can climb into the Reflex box (5); slow-correct caps at 4
+      p.box = Math.min(fast ? 5 : 4, p.box + 1);
+      streak++;
+    } else {
+      p.box = 1;            // wrong drops it to box 1
+      streak = 0;
+    }
+    save();
+    flash(ok);
+    next();
+  }
+
+  function flash(ok){
+    var f = $("flash");
+    f.style.background = "radial-gradient(circle at 50% 45%, "+(ok?"var(--good)":"var(--bad)")+", transparent 70%)";
+    f.classList.remove("go"); void f.offsetWidth; f.classList.add("go");
+  }
+
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+
+  // ---------- keyboard ----------
+  document.addEventListener("keydown", function(e){
+    if(e.target.tagName === "TEXTAREA") return;
+    if(e.code === "Space"){ e.preventDefault(); if(!revealed) doReveal(); return; }
+    if(!revealed) return;
+    if(e.key === "1" || e.key === "ArrowLeft"){ e.preventDefault(); grade(false); }
+    else if(e.key === "2" || e.key === "ArrowRight" || e.key === "Enter"){ e.preventDefault(); grade(true); }
+  });
+
+  // ---------- data tools ----------
+  function msg(t, ok){ var m=$("msg"); m.textContent=t; m.className="msg "+(ok?"ok":"err"); setTimeout(function(){ if(m.textContent===t){m.textContent="";m.className="msg";} }, 4000); }
+
+  $("export").addEventListener("click", function(){
+    var payload = {version:VERSION, deck:deck.id, exported:new Date().toISOString(), progress:prog};
+    var blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = deck.id + "-progress.json";
+    a.click(); URL.revokeObjectURL(a.href);
+    msg("Exported "+deck.id+"-progress.json", true);
+  });
+  $("import").addEventListener("click", function(){
+    var inp = document.createElement("input"); inp.type="file"; inp.accept="application/json";
+    inp.onchange = function(){
+      var file = inp.files[0]; if(!file) return;
+      var rd = new FileReader();
+      rd.onload = function(){
+        try{ var o = JSON.parse(rd.result); if(o.progress){ prog = o.progress; deck.cards.forEach(function(c,i){c._k=c.sym+"|"+i; if(!prog[c._k])prog[c._k]={box:1,seen:0,correct:0,best:null,last:null};}); save(); renderStats(); msg("Progress imported.", true);} else msg("No progress field found.", false); }
+        catch(err){ msg("Could not parse that file.", false); }
+      };
+      rd.readAsText(file);
+    };
+    inp.click();
+  });
+  var resetArmed = false, resetTO = null;
+  $("reset").addEventListener("click", function(){
+    var b = $("reset");
+    if(!resetArmed){
+      resetArmed = true; b.textContent = "↺ Tap again to confirm";
+      resetTO = setTimeout(function(){ resetArmed=false; b.textContent="↺ Reset this deck"; }, 3500);
+      return;
+    }
+    clearTimeout(resetTO); resetArmed=false; b.textContent="↺ Reset this deck";
+    try{ localStorage.removeItem(keyFor(deck)); }catch(e){}
+    streak=0; load(); next(); msg("Deck reset.", true);
+  });
+  $("loaddeck").addEventListener("click", function(){
+    var raw = $("deckinput").value.trim(); if(!raw){ msg("Paste a deck first.", false); return; }
+    try{
+      var arr = JSON.parse(raw);
+      if(!Array.isArray(arr) || !arr.length) throw 0;
+      arr.forEach(function(c){ if(typeof c.sym==="undefined"||typeof c.say==="undefined") throw 0; c.name=c.name||""; c.example=c.example||""; c.mean=c.mean||""; c.known=c.known||""; });
+      deck = {id:"custom-"+arr.length, name:"Custom deck", cards:arr};
+      $("deckname").textContent = deck.name;
+      streak=0; load(); next(); msg("Loaded "+arr.length+" cards.", true);
+    }catch(err){ msg("Invalid deck JSON. Need an array of {sym, say, mean, known}.", false); }
+  });
+  $("copydeck").addEventListener("click", function(){
+    var json = JSON.stringify(deck.cards.map(function(c){return {sym:c.sym,name:c.name,example:c.example,say:c.say,mean:c.mean,known:c.known};}), null, 2);
+    if(navigator.clipboard) navigator.clipboard.writeText(json).then(function(){msg("Deck JSON copied.",true);}, function(){$("deckinput").value=json; msg("Copied into the box.",true);});
+    else { $("deckinput").value = json; msg("Deck JSON put in the box.", true); }
+  });
+
+  // ---------- go ----------
+  load(); renderStats(); next();
+})();
+</script>
+</body>
+</html>
