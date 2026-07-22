@@ -220,8 +220,9 @@
     <details>
       <summary>Decks &amp; data</summary>
       <div class="panel">
-        <p>Progress lives on this device. <b>Export</b> saves a JSON snapshot (scores, boxes, best times) you can commit to the repo. <b>Load a deck</b> to reuse Glyph for any subject — paste JSON of <span class="mono">[{"sym","name","say","mean","known"}]</span> (name optional).</p>
+        <p><b>Your progress auto-saves on this device.</b> To carry it to another device or browser, tap <b>Copy save link</b> — your scores are baked into the link; open it anywhere to pick up where you left off (no account needed). <b>Export</b> saves a JSON file; <b>Load a deck</b> reuses Glyph for any subject (paste <span class="mono">[{"sym","name","say","mean","known"}]</span>).</p>
         <div class="toolrow">
+          <button class="tool" id="savelink">🔗 Copy save link</button>
           <button class="tool" id="export">⭳ Export progress</button>
           <button class="tool" id="import">⭱ Import progress</button>
           <button class="tool danger" id="reset">↺ Reset this deck</button>
@@ -487,8 +488,31 @@
     else copyReport(txt);
   });
 
+  // ---------- portable save link (state in URL hash — no accounts, no backend) ----------
+  function encodeState(){
+    var arr = deck.cards.map(function(c){ var p=prog[c._k]; return [p.box, p.seen, p.correct, (p.best==null?-1:p.best)]; });
+    var s = JSON.stringify({d:deck.id, a:arr});
+    return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  }
+  function applyState(str){
+    try{
+      var b = str.replace(/-/g,"+").replace(/_/g,"/");
+      var o = JSON.parse(decodeURIComponent(escape(atob(b))));
+      if(!o || o.d!==deck.id || !Array.isArray(o.a)) return false;
+      o.a.forEach(function(row,i){ var c=deck.cards[i]; if(!c) return; prog[c._k]={box:row[0]||1, seen:row[1]||0, correct:row[2]||0, best:(row[3]===-1?null:row[3])}; });
+      save(); return true;
+    }catch(e){ return false; }
+  }
+  $("savelink").addEventListener("click", function(){
+    var url = location.origin + location.pathname + "#s=" + encodeState();
+    if(navigator.clipboard){ navigator.clipboard.writeText(url).then(function(){ msg("Save link copied — open it on any device to restore.", true); }, function(){ $("deckinput").value=url; msg("Save link is in the box above — copy it.", true); }); }
+    else { $("deckinput").value=url; msg("Save link is in the box above — copy it.", true); }
+  });
+
   // ---------- go ----------
-  load(); renderStats(); next();
+  load();
+  (function(){ var m=(location.hash||"").match(/[#&]s=([^&]+)/); if(m && applyState(m[1])){ try{ history.replaceState(null,"",location.pathname); }catch(e){} } })();
+  renderStats(); next();
 })();
 </script>
 </body>
