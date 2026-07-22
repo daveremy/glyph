@@ -90,6 +90,11 @@
   .ask .tag{font-size:.66rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); border:1px solid var(--border); border-radius:999px; padding:5px 11px}
   .ask .timer{font-family:ui-monospace,Menlo,monospace; font-variant-numeric:tabular-nums; font-size:.82rem; color:var(--faint)}
   .ask .timer.fast{color:var(--reflex)}
+  .askright{display:flex; align-items:center; gap:10px}
+  .audiobtn,.replaybtn{background:transparent; border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:.9rem; line-height:1; color:var(--text); cursor:pointer}
+  .audiobtn:hover,.replaybtn:hover{border-color:var(--accent)}
+  .audiobtn.off{opacity:.45}
+  .replaybtn{margin-left:auto; align-self:center}
 
   .prompt{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:10px; padding:8px 0}
   .glyph{font-family:ui-serif,Georgia,serif; line-height:1; color:var(--text)}
@@ -185,7 +190,10 @@
       <div class="flash" id="flash"></div>
       <div class="ask">
         <span class="tag" id="tag">Symbol → meaning</span>
-        <span class="timer mono" id="timer">0.0s</span>
+        <span class="askright">
+          <button class="audiobtn" id="audiotoggle" title="Toggle pronunciation" aria-label="Toggle pronunciation">🔊</button>
+          <span class="timer mono" id="timer">0.0s</span>
+        </span>
       </div>
 
       <div class="prompt" id="prompt"><!-- filled by JS --></div>
@@ -198,6 +206,7 @@
             <div class="name" id="a-name"></div>
             <div class="mean" id="a-mean"></div>
           </div>
+          <button class="replaybtn" id="replay" title="Hear it" aria-label="Hear it">🔊</button>
         </div>
         <div class="known mono" id="a-known"></div>
         <div class="example mono" id="a-example"></div>
@@ -369,6 +378,7 @@
     $("a-mean").textContent = cur.mean;
     $("a-known").textContent = cur.known;
     var ex = $("a-example"); ex.textContent = cur.example || ""; ex.style.display = cur.example ? "block" : "none";
+    speak(cur.say);
     $("answer").classList.add("show");
     var fast = curElapsed <= REFLEX_MS;
     var gotSub = fast ? "fast ⚡ · Enter" : "Enter";
@@ -509,7 +519,22 @@
     else { $("deckinput").value=url; msg("Save link is in the box above — copy it.", true); }
   });
 
+  // ---------- audio (v1: browser speech) ----------
+  var audioOn = true;
+  try{ audioOn = localStorage.getItem("glyph-audio") !== "off"; }catch(e){}
+  function paintAudio(){ var b=$("audiotoggle"); if(b){ b.textContent = audioOn?"🔊":"🔇"; b.classList.toggle("off", !audioOn); } }
+  function speak(text, force){
+    if((!audioOn && !force) || !text || !window.speechSynthesis) return;
+    try{ speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(text); u.rate=0.95; u.pitch=1; speechSynthesis.speak(u); }catch(e){}
+  }
+  $("audiotoggle").addEventListener("click", function(){
+    audioOn=!audioOn; try{ localStorage.setItem("glyph-audio", audioOn?"on":"off"); }catch(e){}
+    paintAudio(); if(audioOn && cur) speak(cur.say);
+  });
+  $("replay").addEventListener("click", function(){ if(cur) speak(cur.say, true); });
+
   // ---------- go ----------
+  paintAudio();
   load();
   (function(){ var m=(location.hash||"").match(/[#&]s=([^&]+)/); if(m && applyState(m[1])){ try{ history.replaceState(null,"",location.pathname); }catch(e){} } })();
   renderStats(); next();
