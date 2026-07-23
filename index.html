@@ -62,7 +62,10 @@
   .brand{display:flex; flex-direction:column; gap:2px}
   .logo{font-family:ui-serif,Georgia,serif; font-size:1.5rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase}
   .logo b{color:var(--accent); font-weight:600}
-  .deckname{font-size:.72rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted)}
+  .deckswitch{display:flex; gap:6px; margin-top:5px; flex-wrap:wrap}
+  .deckpill{font-family:inherit; font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; padding:4px 9px; border:1px solid var(--border); border-radius:999px; color:var(--muted); cursor:pointer; background:transparent}
+  .deckpill.active{background:var(--accent); color:var(--accent-ink); border-color:transparent}
+  .deckpill:hover{border-color:var(--accent)}
   .readout{display:flex; gap:16px; text-align:right}
   .stat{display:flex; flex-direction:column; gap:1px; line-height:1}
   .stat .n{font-family:ui-monospace,Menlo,monospace; font-variant-numeric:tabular-nums; font-size:1.35rem; font-weight:600}
@@ -103,6 +106,7 @@
   .prompt .word{font-family:ui-serif,Georgia,serif; font-size:clamp(1.7rem,7vw,2.4rem); font-weight:600; text-wrap:balance}
   .prompt .hint{font-size:.9rem; color:var(--muted); max-width:42ch; text-wrap:balance}
   .prompt .cue{font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint)}
+  .prompt .stmt{font-family:ui-serif,Georgia,serif; font-size:clamp(1.3rem,4.4vw,2rem); font-weight:600; line-height:1.45; text-wrap:balance; color:var(--text)}
 
   /* ---------- answer reveal ---------- */
   .answer{display:none; flex-direction:column; gap:12px; border-top:1px dashed var(--border); padding-top:18px}
@@ -174,7 +178,7 @@
   <header>
     <div class="brand">
       <div class="logo serif"><b>Glyph</b></div>
-      <div class="deckname" id="deckname">Set Notation</div>
+      <div class="deckswitch" id="deckswitch"></div>
     </div>
     <div class="readout">
       <div class="stat reflex"><span class="n mono" id="s-reflex">0</span><span class="k">Reflex</span></div>
@@ -278,6 +282,25 @@
     ]
   };
 
+  // A "statement" deck: each card is a full formalism you read aloud.
+  var FORMALISMS_DECK = {
+    id:"set-formalisms", name:"Set Formalisms", kind:"statement",
+    cards:[
+      {sym:"A ⊆ B  ⇔  ∀x (x ∈ A ⇒ x ∈ B)", say:"A is a subset of B if and only if, for every x, if x is in A then x is in B", mean:"subset means: every element of A is also in B", known:"all of A's rows sit inside B"},
+      {sym:"x ∈ A ∩ B  ⇔  (x ∈ A ∧ x ∈ B)", say:"x is in the intersection of A and B if and only if x is in A and x is in B", mean:"intersection is just logical AND", known:"INNER JOIN"},
+      {sym:"x ∈ A ∪ B  ⇔  (x ∈ A ∨ x ∈ B)", say:"x is in the union of A and B if and only if x is in A or x is in B", mean:"union is just logical OR", known:"UNION"},
+      {sym:"A = B  ⇔  (A ⊆ B ∧ B ⊆ A)", say:"A equals B if and only if A is a subset of B and B is a subset of A", mean:"two sets are equal when each contains the other", known:"same rows, checked both directions"},
+      {sym:"x ∈ A \\ B  ⇔  (x ∈ A ∧ x ∉ B)", say:"x is in A minus B if and only if x is in A and x is not in B", mean:"difference: in A but not in B", known:"EXCEPT"},
+      {sym:"∅ ⊆ A", say:"the empty set is a subset of A", mean:"the empty set is a subset of every set (nothing to check — vacuously true)", known:"an empty result fits inside anything"},
+      {sym:"E = { n ∈ ℤ : ∃k ∈ ℤ, n = 2k }", say:"E is the set of integers n such that there exists an integer k with n equal to two k", mean:"E is the even integers", known:"SELECT n FROM integers WHERE n is even"},
+      {sym:"(A ⊆ B ∧ B ⊆ C)  ⇒  A ⊆ C", say:"if A is a subset of B, and B is a subset of C, then A is a subset of C", mean:"subset is transitive — containment chains through", known:"nesting carries through"},
+      {sym:"ℕ ⊂ ℤ ⊂ ℚ ⊂ ℝ", say:"the naturals are a proper subset of the integers, which are a proper subset of the rationals, which are a proper subset of the reals", mean:"the number sets nest, each strictly bigger than the last", known:"your eye chart 😄"},
+      {sym:"|A ∪ B| = |A| + |B| − |A ∩ B|", say:"the size of A union B equals the size of A plus the size of B minus the size of A intersect B", mean:"inclusion–exclusion: add the sizes, then subtract the overlap you double-counted", known:"COUNT, minus the duplicates"}
+    ]
+  };
+
+  var DECKS = [SET_DECK, FORMALISMS_DECK];
+
   var $ = function(id){ return document.getElementById(id); };
   var deck = SET_DECK, prog = {}, cur = null, dir = "s2m", revealed = false;
   var t0 = 0, tick = null, curElapsed = 0;
@@ -348,10 +371,22 @@
 
   function next(){
     cur = weightedPick();
-    dir = Math.random() < 0.5 ? "s2m" : "m2s";
     revealed = false;
     $("answer").classList.remove("show");
     var p = $("prompt");
+
+    if(deck.kind === "statement"){
+      dir = "read";
+      $("tag").textContent = "Read the statement";
+      p.innerHTML = '<div class="stmt">'+esc(cur.sym)+'</div>'+
+                    '<div class="cue">read it aloud, then reveal</div>';
+      $("actions").innerHTML = '<button class="btn-reveal" id="reveal">Reveal <span class="kbd">Space</span></button>';
+      $("reveal").addEventListener("click", doReveal);
+      startTimer(); renderStats();
+      return;
+    }
+
+    dir = Math.random() < 0.5 ? "s2m" : "m2s";
     var isBig = cur.sym.length <= 3;
     if(dir === "s2m"){
       $("tag").textContent = "Symbol → meaning";
@@ -374,14 +409,28 @@
   function doReveal(){
     if(revealed) return;
     revealed = true; stopTimer();
-    $("a-sym").textContent = cur.sym;
-    $("a-say").textContent = cur.say;
-    var nm = $("a-name"); nm.textContent = cur.name || ""; nm.style.display = cur.name ? "block" : "none";
-    $("a-mean").textContent = cur.mean;
-    $("a-known").textContent = cur.known;
-    var ex = $("a-example"); ex.textContent = cur.example || ""; ex.style.display = cur.example ? "block" : "none";
-    // reveal audio: speak the ANSWER side — s2m answer is the meaning, m2s answer is the symbol name
-    if(dir === "s2m") speakMeaning(); else speakName();
+    if(deck.kind === "statement"){
+      // statement card: the prompt (the formalism) stays on screen; reveal the plain reading + point
+      $("a-sym").style.display = "none";
+      $("a-say").textContent = cur.say;               // the reading (also spoken)
+      $("a-name").style.display = "none";
+      $("a-mean").textContent = cur.mean || "";
+      $("a-known").textContent = cur.known || "";
+      $("a-known").style.display = cur.known ? "" : "none";
+      $("a-example").style.display = "none";
+      speakMeaning();                                  // speak the mathematician's reading
+    } else {
+      $("a-sym").style.display = "";
+      $("a-sym").textContent = cur.sym;
+      $("a-say").textContent = cur.say;
+      var nm = $("a-name"); nm.textContent = cur.name || ""; nm.style.display = cur.name ? "block" : "none";
+      $("a-mean").textContent = cur.mean;
+      $("a-known").textContent = cur.known;
+      $("a-known").style.display = cur.known ? "" : "none";
+      var ex = $("a-example"); ex.textContent = cur.example || ""; ex.style.display = cur.example ? "block" : "none";
+      // reveal audio: speak the ANSWER side — s2m answer is the meaning, m2s answer is the symbol name
+      if(dir === "s2m") speakMeaning(); else speakName();
+    }
     $("answer").classList.add("show");
     var fast = curElapsed <= REFLEX_MS;
     var gotSub = fast ? "fast ⚡ · Enter" : "Enter";
@@ -472,9 +521,9 @@
       var arr = JSON.parse(raw);
       if(!Array.isArray(arr) || !arr.length) throw 0;
       arr.forEach(function(c){ if(typeof c.sym==="undefined"||typeof c.say==="undefined") throw 0; c.name=c.name||""; c.spoken=c.spoken||""; c.example=c.example||""; c.mean=c.mean||""; c.known=c.known||""; });
-      deck = {id:"custom-"+arr.length, name:"Custom deck", cards:arr};
-      $("deckname").textContent = deck.name;
-      streak=0; load(); next(); msg("Loaded "+arr.length+" cards.", true);
+      var cd = {id:"custom-"+arr.length, name:"Custom deck", cards:arr};
+      DECKS = DECKS.filter(function(x){return x.id!==cd.id;}); DECKS.push(cd);
+      deck = cd; streak=0; load(); renderDeckSwitch(); renderStats(); next(); msg("Loaded "+arr.length+" cards.", true);
     }catch(err){ msg("Invalid deck JSON. Need an array of {sym, say, mean, known}.", false); }
   });
   $("copydeck").addEventListener("click", function(){
@@ -539,8 +588,26 @@
   $("replay").addEventListener("click", function(){ speakMeaning(true); });  // 🔊 by the english = the meaning
   $("a-sym").addEventListener("click", function(){ speakName(true); });       // click the glyph = its spoken name
 
+  // ---------- deck switcher ----------
+  function renderDeckSwitch(){
+    var el = $("deckswitch"); if(!el) return; el.innerHTML = "";
+    DECKS.forEach(function(d){
+      var b = document.createElement("button");
+      b.className = "deckpill" + (d.id===deck.id ? " active" : "");
+      b.textContent = d.kind==="statement" ? "Sentences" : (d.id==="set-notation" ? "Symbols" : d.name);
+      b.addEventListener("click", function(){ if(d.id!==deck.id) switchDeck(d.id); });
+      el.appendChild(b);
+    });
+  }
+  function switchDeck(id){
+    var d = DECKS.filter(function(x){return x.id===id;})[0]; if(!d) return;
+    deck = d; streak = 0;
+    load(); renderDeckSwitch(); renderStats(); next();
+  }
+
   // ---------- go ----------
   paintAudio();
+  renderDeckSwitch();
   load();
   (function(){ var m=(location.hash||"").match(/[#&]s=([^&]+)/); if(m && applyState(m[1])){ try{ history.replaceState(null,"",location.pathname); }catch(e){} } })();
   renderStats(); next();
